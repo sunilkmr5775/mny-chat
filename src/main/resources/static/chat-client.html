@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket STOMP Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script> <!-- Keep this if you re-add SockJS later -->
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #messages { border: 1px solid #ccc; padding: 10px; min-height: 200px; overflow-y: scroll; margin-bottom: 10px; background-color: #f9f9f9; }
+    input[type="text"], button { padding: 8px; margin-right: 5px; }
+    .log-item { margin-bottom: 5px; word-wrap: break-word; }
+    .status { font-weight: bold; }
+    .error { color: red; }
+    .system { color: blue; }
+    .user { color: green; }
+  </style>
+</head>
+<body>
+<h1>WebSocket STOMP Test Client</h1>
+
+<div class="status" id="connection-status">Connecting...</div>
+
+<div id="messages"></div>
+
+<input type="text" id="messageInput" placeholder="Type your message" style="width: 70%;">
+<button id="sendMessageButton">Send Message (User1 to User2)</button>
+<button id="sendMessageButton2">Send Message (User2 to User1)</button>
+<br><br>
+<input type="text" id="subscribeInput" placeholder="User ID to subscribe as (e.g., user1)">
+<button id="subscribeButton">Subscribe</button>
+
+<script>
+  const websocketUrl = 'ws://localhost:8081/ws'; // Use your Spring Boot port
+  let stompClient = null;
+  let currentUserId = null; // To hold the ID of the user subscribed in this client
+
+  const messagesDiv = document.getElementById('messages');
+  const connectionStatusDiv = document.getElementById('connection-status');
+  const messageInput = document.getElementById('messageInput');
+  const subscribeInput = document.getElementById('subscribeInput');
+  const sendMessageButton = document.getElementById('sendMessageButton');
+  const sendMessageButton2 = document.getElementById('sendMessageButton2');
+  const subscribeButton = document.getElementById('subscribeButton');
+
+  function log(message, className = 'log-item') {
+      const p = document.createElement('p');
+      p.className = className;
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      messagesDiv.appendChild(p);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function updateConnectionStatus(status, isConnected = false) {
+      connectionStatusDiv.textContent = status;
+      connectionStatusDiv.className = isConnected ? 'status system' : 'status error';
+  }
+
+  function connect() {
+      log('Attempting to connect to WebSocket...', 'system');
+      updateConnectionStatus('Connecting...', false);
+
+      // Connect using pure WebSocket for now, as .withSockJS() is removed from backend
+      stompClient = Stomp.client(websocketUrl);
+
+      stompClient.connect({}, (frame) => {
+          log('Connected to STOMP! Frame: ' + frame, 'system');
+          updateConnectionStatus('Connected!', true);
+
+          // Now that we are connected, we can subscribe.
+          // The actual subscription will happen when the user clicks 'Subscribe'.
+          log('Connection established. Enter User ID and click Subscribe.', 'system');
+
+      }, (error) => {
+          log('STOMP Connection Error: ' + error, 'error');
+          updateConnectionStatus('Connection Error: ' + error, false);
+      });
+  }
+
+  function subscribeToUserMessages(userId) {
+      if (!stompClient || !stompClient.connected) {
+          log('Not connected to STOMP broker. Please connect first.', 'error');
+          return;
+      }
+      if (currentUserId) {
+          log(`Already subscribed as ${currentUserId}. Disconnect and resubscribe if you want to change user.`, 'error');
+          return;
+      }
+
+      currentUserId = userId;
+      const destination = `/user/${userId}/queue/messages`;
+      log(`Subscribing to: ${destination} as ${userId}`, 'system');
+
+      stompClient.subscribe(destination, (message) => {
+          const chatMessage = JSON.parse(message.body);
+          const sender = chatMessage.senderId === currentUserId ? 'You' : chatMessage.senderId;
+          const receiver = chatMessage.receiverId === currentUserId ? 'You' : chatMessage.receiverId;
+          log(`[${sender} -> ${receiver}]: ${chatMessage.content}`, chatMessage.senderId === currentUserId ? 'user' : 'log-item');
+      }, { id: `sub-${userId}` }); // Use a unique ID for the subscription
+      log(`Subscribed successfully as ${userId}`, 'system');
+  }
+
+
+  function sendMessage(senderId, receiverId) {
+      if (!stompClient || !stompClient.connected) {
+          log('Not connected or subscribed. Cannot send message.', 'error');
+          return;
+      }
+      if (!messageInput.value.trim()) {
+          log('Message cannot be empty.', 'error');
+          return;
+      }
+
+      const chatMessage = {
+          senderId: senderId,
+          receiverId: receiverId,
+          content: messageInput.value.trim()
+      };
+
+      log(`Sending from ${senderId} to ${receiverId}: ${chatMessage.content}`, 'system');
+      stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+      messageInput.value = ''; // Clear input after sending
+  }
+
+  // Event Listeners
+  sendMessageButton.addEventListener('click', () => {
+      if (!currentUserId) {
+          log('Please subscribe as a user first!', 'error');
+          return;
+      }
+      // For testing, assume user1 always sends to user2. Adjust as needed.
+      sendMessage(currentUserId, currentUserId === 'user1' ? 'user2' : 'user1');
+  });
+
+  sendMessageButton2.addEventListener('click', () => {
+      if (!currentUserId) {
+          log('Please subscribe as a user first!', 'error');
+          return;
+      }
+      // For testing, assume user2 always sends to user1. Adjust as needed.
+      sendMessage(currentUserId, currentUserId === 'user2' ? 'user1' : 'user2');
+  });
+
+  subscribeButton.addEventListener('click', () => {
+      const userId = subscribeInput.value.trim();
+      if (userId) {
+          subscribeToUserMessages(userId);
+      } else {
+          log('Please enter a User ID to subscribe!', 'error');
+      }
+  });
+
+  // Initial connection attempt when the page loads
+  document.addEventListener('DOMContentLoaded', connect);
+
+</script>
+</body>
+</html>

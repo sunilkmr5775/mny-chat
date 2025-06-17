@@ -1,0 +1,6 @@
+com\example\socketio\controller\ChatController.class
+com\example\socketio\service\ChatService.class
+com\example\socketio\model\ChatMessage.class
+com\example\socketio\ChatApplication.class
+com\example\socketio\repository\ChatMessageRepository.class
+com\example\socketio\config\WebSocketConfig.class
