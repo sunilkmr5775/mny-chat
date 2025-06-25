@@ -1,3 +1,4 @@
+/*
 package com.example.socketio.model;
 
 import javax.persistence.*;
@@ -87,4 +88,4 @@ public class ChatMessage {
                 ", timestamp=" + timestamp +
                 '}';
     }
-}
+}*/

@@ -1,3 +1,4 @@
+/*
 package com.example.socketio.config;
 
 import org.springframework.context.annotation.Configuration;
@@ -25,4 +26,4 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // as it handles cross-browser compatibility and fallback mechanisms.
         registry.addEndpoint("/ws").setAllowedOriginPatterns("*");
     }
-}
+}*/

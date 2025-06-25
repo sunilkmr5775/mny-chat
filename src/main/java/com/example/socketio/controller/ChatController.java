@@ -1,3 +1,4 @@
+/*
 package com.example.socketio.controller;
 
 import com.example.socketio.model.ChatMessage;
@@ -25,7 +26,8 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    /**
+    */
+/**
      * Handles incoming chat messages sent to "/app/chat".
      *
      * When a client sends a message to "/app/chat", this method receives it.
@@ -35,7 +37,8 @@ public class ChatController {
      * The `timestamp` will be set by the server.
      *
      * @param chatMessage The message payload received from the client.
-     */
+     *//*
+
     @MessageMapping("/chat") // Maps messages sent to '/app/chat'
     public void processMessage(@Payload ChatMessage chatMessage) {
         // Set server-side timestamp for consistency
@@ -58,14 +61,16 @@ public class ChatController {
         System.out.println("Message sent to " + chatMessage.getReceiverId() + " and " + chatMessage.getSenderId());
     }
 
-    /**
+    */
+/**
      * REST endpoint to retrieve chat history between two users.
      * This can be used by the frontend to load past conversations when a chat is opened.
      *
      * @param user1Id The ID of the first user.
      * @param user2Id The ID of the second user.
      * @return A list of ChatMessage objects.
-     */
+     *//*
+
     @GetMapping("/api/chat/history/{user1Id}/{user2Id}")
     @ResponseBody // Indicates that the return value should be bound directly to the web response body
     public List<ChatMessage> getChatHistory(@PathVariable String user1Id, @PathVariable String user2Id) {
@@ -74,4 +79,4 @@ public class ChatController {
         System.out.println("Found " + history.size() + " messages.");
         return history;
     }
-}
+}*/
